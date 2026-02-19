@@ -1,47 +1,130 @@
-# Airbnb Scraper (JSON + PostgreSQL)
+# Airbnb Scraper
 
-This scraper now stores listings in both:
+A concurrent, multi-city Airbnb scraper written in Go. It uses a headless Chromium browser (via `chromedp`) to scrape listing data and persists results to both a local JSON file and a PostgreSQL database.
 
-- `all_listings.json`
-- PostgreSQL table `listings`
+---
 
-## Start PostgreSQL with Docker
+## Features
+
+- Scrapes multiple cities concurrently via a configurable worker pool
+- Extracts title, price, location, rating, URL, and description for each listing
+- Upserts results into PostgreSQL (no duplicates on re-run)
+- Writes all results to `all_listings.json`
+- Prints a summary with stats: total listings, average/min/max price, top-rated properties, and per-city counts
+
+---
+
+## Requirements
+
+- [Go 1.21+](https://go.dev/dl/)
+- [Docker](https://docs.docker.com/get-docker/) and Docker Compose (for PostgreSQL)
+- Google Chrome or Chromium installed on the host (used by `chromedp`)
+
+---
+
+## Cloning the Repository
+
+```bash
+git clone https://github.com/Mubashirul-Islam/airbnb-scraper-w3e.git
+cd airbnb-scraper-w3e
+```
+
+---
+
+## Setup
+
+### 1. Install Go dependencies
+
+```bash
+go mod download
+```
+
+### 2. Start PostgreSQL with Docker
 
 ```bash
 docker compose up -d postgres
 ```
 
-The DB is exposed on `localhost:5432` with default credentials:
+The container is named `airbnb-scraper-postgres` and exposes PostgreSQL on **port 5433** (mapped from container port 5432).
 
-- user: `airbnb`
-- password: `airbnb`
-- database: `airbnb_scraper`
+Default credentials:
 
-## Configure DB connection (optional)
+| Setting  | Value            |
+| -------- | ---------------- |
+| Host     | `localhost`      |
+| Port     | `5433`           |
+| User     | `airbnb`         |
+| Password | `airbnb`         |
+| Database | `airbnb_scraper` |
 
-Copy env template and override if needed:
+The `listings` table is created automatically on first start via the init script at `docker/postgres-init/001_create_listings.sql`.
+
+### 3. Configure environment variables (optional)
+
+All settings have sensible defaults and can be overridden with environment variables:
+
+| Variable      | Default          | Description                          |
+| ------------- | ---------------- | ------------------------------------ |
+| `DB_HOST`     | `localhost`      | PostgreSQL host                      |
+| `DB_PORT`     | `5433`           | PostgreSQL port                      |
+| `DB_USER`     | `airbnb`         | PostgreSQL user                      |
+| `DB_PASSWORD` | `airbnb`         | PostgreSQL password                  |
+| `DB_NAME`     | `airbnb_scraper` | PostgreSQL database name             |
+| `DB_SSLMODE`  | `disable`        | PostgreSQL SSL mode                  |
+| `WORKERS`     | `3`              | Number of cities scraped in parallel |
+
+Export them directly or place them in a `.env` file and source it:
 
 ```bash
-cp .env.example .env
+export WORKERS=5
+export DB_HOST=mydbhost
 ```
 
-Supported environment variables:
+---
 
-- `DB_HOST`
-- `DB_PORT`
-- `DB_USER`
-- `DB_PASSWORD`
-- `DB_NAME`
-- `DB_SSLMODE`
-
-## Run scraper
+## Running the Scraper
 
 ```bash
 go run .
 ```
 
-## Check stored data
+The scraper will process the configured cities (default: New York, Paris, Bangkok, Tokyo, Sydney), scrape up to 2 pages and 3 properties per page for each city, and then write results to `all_listings.json` and upsert them into the `listings` table.
 
-```bash
-docker exec -it airbnb-scraper-postgres psql -U airbnb -d airbnb_scraper -c "SELECT city, title, price, url FROM listings ORDER BY id DESC LIMIT 10;"
+---
+
+## Project Structure
+
 ```
+airbnb-scraper-w3e/
+├── main.go                          # Entry point: orchestrates scraping, storage, and stats output
+├── go.mod                           # Go module definition and dependencies
+├── all_listings.json                # Scrape output (auto-generated)
+│
+├── config/
+│   └── config.go                    # Runtime config with defaults and env var overrides
+│
+├── models/
+│   └── listing.go                   # Data models: Listing, CityResult, DetailClickResult
+│
+├── scraper/
+│   ├── search.go                    # Searches Airbnb for a city and collects listing URLs
+│   ├── detail.go                    # Visits each listing URL and extracts full details
+│   └── selectors.go                 # CSS/JS selectors used during scraping
+│
+├── services/
+│   ├── runner.go                    # Concurrent worker pool — dispatches cities to goroutines
+│   └── city_scraper.go              # Coordinates search + detail scraping for one city
+│
+├── storage/
+│   └── postgres.go                  # PostgreSQL connection and upsert logic (pgx/v5)
+│
+├── utils/
+│   ├── browser.go                   # chromedp allocator setup (headless, user-agent, etc.)
+│   ├── json.go                      # Writes results to JSON file
+│   └── stats.go                     # Computes summary statistics from scraped results
+│
+└── docker/
+    └── postgres-init/
+        └── 001_create_listings.sql  # Auto-run SQL: creates listings table and indexes
+```
+

@@ -9,6 +9,7 @@ import (
 // Config holds all runtime configuration for the scraper.
 type Config struct {
 	Cities               []string
+	Workers              int
 	MaxPages             int
 	MaxPropertiesPerPage int
 	OutFile              string
@@ -40,6 +41,7 @@ func Default() Config {
 			"Tokyo",
 			"Sydney",
 		},
+		Workers:              getEnvInt("WORKERS", 3),
 		MaxPages:             2,
 		MaxPropertiesPerPage: 3,
 		OutFile:              "all_listings.json",

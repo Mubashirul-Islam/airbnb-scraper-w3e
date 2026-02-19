@@ -17,10 +17,10 @@ func main() {
 	cfg := config.Default()
 
 	log.Printf("╔═══════════════════════════════════════════════════╗")
-	log.Printf("║      Airbnb Multi-City Scraper (Sequential)       ║")
+	log.Printf("║      Airbnb Multi-City Scraper (Concurrent)       ║")
 	log.Printf("╚═══════════════════════════════════════════════════╝")
 	log.Printf("Cities   : %s", strings.Join(cfg.Cities, ", "))
-	log.Printf("Workers  : 1 (cities processed sequentially)")
+	log.Printf("Workers  : %d (cities processed concurrently)", cfg.Workers)
 	log.Printf("Pages    : %d per city", cfg.MaxPages)
 	log.Printf("Output   : %s", cfg.OutFile)
 	log.Printf("Postgres : %s:%d/%s", cfg.DBHost, cfg.DBPort, cfg.DBName)
