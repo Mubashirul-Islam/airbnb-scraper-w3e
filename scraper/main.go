@@ -18,9 +18,9 @@ import (
 // Listing holds all scraped data for a single Airbnb property.
 type Listing struct {
 	Title       string `json:"title"`
-	Price       string `json:"price"`
+	Price       float32 `json:"price"`
 	Location    string `json:"location"`
-	Rating      string `json:"rating"`
+	Rating      float32 `json:"rating"`
 	URL         string `json:"url"`
 	Description string `json:"description"`
 }
@@ -42,7 +42,7 @@ type detailClickResult struct {
 
 var defaultCities = []string{
 	"New York",
-	//"Paris",
+	"Paris",
 	// "Bangkok",
 	// "Tokyo",
 	// "Sydney",
@@ -52,9 +52,9 @@ var defaultCities = []string{
 
 func main() {
 	cities := defaultCities
-	maxPages := 1
+	maxPages := 2
 	outFile := "all_listings.json"
-	headless := false
+	headless := true
 
 	log.Printf("╔═══════════════════════════════════════════════════╗")
 	log.Printf("║      Airbnb Concurrent Multi-City Scraper         ║")
@@ -222,18 +222,7 @@ func scrapeSearchPage(ctx context.Context, city string, page int) ([]Listing, er
 		}
 	}
 
-	var count int
-	if err := chromedp.Run(ctx, chromedp.Evaluate(fmt.Sprintf(`
-		(() => document.querySelectorAll(%q).length)()
-	`, propertySelector), &count)); err != nil {
-		return nil, fmt.Errorf("count listing nodes: %w", err)
-	}
-
-	if count == 0 {
-		return nil, fmt.Errorf("zero listings extracted (selectors may need updating)")
-	}
-
-	out := make([]Listing, count)
+	out := make([]Listing, 2)
 	return out, nil
 }
 
@@ -290,24 +279,15 @@ func fillDetailPageFromSearch(ctx context.Context, l *Listing, listingIndex int)
 		return fmt.Errorf("wait detail page: %w", err)
 	}
 
-	var detail map[string]string
+	var detail map[string]interface{}
 	if err := chromedp.Run(detailCtx, chromedp.Evaluate(`
 		(() => {
-			const txt = (el) => (el && (el.innerText || '').trim()) || '';
-			const title = txt(document.querySelector('h1, [data-section-id="TITLE_DEFAULT"] h1, [data-testid="title"]'));
-			let price = '';
-			const priceNodes = Array.from(document.querySelectorAll('[data-testid="book-it-default"] [data-testid="price"], [data-testid="price"] , [data-plugin-in-point-id="BOOK_IT_SIDEBAR"] span, ._tyxjp1, .pquyp81'));
-			for (const n of priceNodes) {
-				const v = txt(n).split('\n')[0];
-				if (/\$|€|£|¥|₹|฿|A\$/.test(v) || /night|nuit|mois|month|月/.test(v.toLowerCase())) {
-					price = v;
-					break;
-				}
-			}
-			const location = txt(document.querySelector('[data-section-id="LOCATION_DEFAULT"] h2, [data-testid="listing-location"], h2'));
-			const ratingEl = document.querySelector('[aria-label*="rating" i], [aria-label*="stars" i], [data-testid="pdp-reviews-highlight-banner-host-rating"]');
-			const rating = ((ratingEl && ratingEl.getAttribute('aria-label')) || txt(ratingEl)).trim();
-			const description = txt(document.querySelector('[data-section-id="DESCRIPTION_DEFAULT"] span, [data-section-id="DESCRIPTION_DEFAULT"] div, .ll4r2nl'));
+			const title = document.querySelector('h1').textContent;
+			const el = document.querySelector('span.u1opajno, span.u174bpcy');
+			const price = parseFloat(el.textContent.replace(/[^0-9.]/g, ''));
+			const location = document.querySelector('h2').textContent;
+			const rating = parseFloat(document.querySelector('div[data-testid="pdp-reviews-highlight-banner-host-rating"] div[aria-hidden ="true"], .r1lcxetl.atm_c8_o7aogt.atm_c8_l52nlx__oggzyc').textContent.trim());
+			const description = document.querySelector('span .l1h825yc.atm_kd_adww2_24z95b').textContent;
 			return { title, price, location, rating, description };
 		})();
 	`, &detail)); err != nil {
@@ -315,11 +295,11 @@ func fillDetailPageFromSearch(ctx context.Context, l *Listing, listingIndex int)
 	}
 
 	_ = chromedp.Run(detailCtx, chromedp.Location(&l.URL))
-	l.Title = strings.TrimSpace(detail["title"])
-	l.Price = strings.TrimSpace(detail["price"])
-	l.Location = strings.TrimSpace(detail["location"])
-	l.Rating = strings.TrimSpace(detail["rating"])
-	l.Description = strings.TrimSpace(detail["description"])
+	l.Title = strings.TrimSpace(detail["title"].(string))
+    l.Price = float32(detail["price"].(float64))
+    l.Location = strings.TrimSpace(detail["location"].(string))
+    l.Rating = float32(detail["rating"].(float64))
+    l.Description = strings.TrimSpace(detail["description"].(string))
 
 	if err := chromedp.Run(detailCtx,
 		chromedp.Navigate(searchURL),
