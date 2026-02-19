@@ -3,52 +3,40 @@ package services
 import (
 	"context"
 	"log"
-	"sync"
 
 	"github.com/chromedp/chromedp"
 
 	"airbnb-scraper-w3e/config"
 	"airbnb-scraper-w3e/models"
+	"airbnb-scraper-w3e/utils"
 )
 
-// RunAll launches one goroutine per city, collects results in original order,
-// and returns the ordered slice of CityResults.
+// RunAll processes cities sequentially and returns results in original order.
 func RunAll(rootCtx context.Context, cfg config.Config) []models.CityResult {
-	resultCh := make(chan models.CityResult, len(cfg.Cities))
-	var wg sync.WaitGroup
+	ordered := make([]models.CityResult, len(cfg.Cities))
 
 	for i, city := range cfg.Cities {
-		wg.Add(1)
-		go func(idx int, c string) {
-			defer wg.Done()
+		allocCtx, cancelAlloc := utils.NewAllocator(rootCtx, cfg)
 
-			tabCtx, cancelTab := chromedp.NewContext(rootCtx,
-				chromedp.WithLogf(func(format string, args ...interface{}) {
-					log.Printf("[%s] "+format, append([]interface{}{c}, args...)...)
-				}),
-			)
-			defer cancelTab()
+		tabCtx, cancelTab := chromedp.NewContext(allocCtx,
+			chromedp.WithLogf(func(format string, args ...interface{}) {
+				log.Printf("[%s] "+format, append([]interface{}{city}, args...)...)
+			}),
+		)
 
-			log.Printf("[%s] ▶ starting", c)
-			listings, err := ScrapeCity(tabCtx, c, cfg)
-			if err != nil {
-				log.Printf("[%s] ✗ %v", c, err)
-			} else {
-				log.Printf("[%s] ✓ %d listings collected", c, len(listings))
-			}
+		log.Printf("[%s] ▶ starting", city)
+		listings, err := ScrapeCity(tabCtx, city, cfg)
+		if err != nil {
+			log.Printf("[%s] ✗ %v", city, err)
+		} else {
+			log.Printf("[%s] ✓ %d listings collected", city, len(listings))
+		}
 
-			resultCh <- models.CityResult{City: c, Index: idx, Listings: listings, Err: err}
-		}(i, city)
+		cancelTab()
+		cancelAlloc()
+
+		ordered[i] = models.CityResult{City: city, Index: i, Listings: listings, Err: err}
 	}
 
-	go func() {
-		wg.Wait()
-		close(resultCh)
-	}()
-
-	ordered := make([]models.CityResult, len(cfg.Cities))
-	for r := range resultCh {
-		ordered[r.Index] = r
-	}
 	return ordered
 }
