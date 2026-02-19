@@ -43,9 +43,9 @@ type detailClickResult struct {
 var defaultCities = []string{
 	"New York",
 	"Paris",
-	// "Bangkok",
-	// "Tokyo",
-	// "Sydney",
+	"Bangkok",
+	"Tokyo",
+	"Sydney",
 }
 
 // ── Entry point ───────────────────────────────────────────────────────────────
@@ -274,32 +274,53 @@ func fillDetailPageFromSearch(ctx context.Context, l *Listing, listingIndex int)
 
 	if err := chromedp.Run(detailCtx,
 		chromedp.WaitVisible(`h1, [data-section-id="OVERVIEW_DEFAULT"]`, chromedp.ByQuery),
-		chromedp.Sleep(1500*time.Millisecond),
+		 chromedp.WaitVisible(`span.u1opajno, span.u174bpcy`, chromedp.ByQuery),
+        chromedp.Sleep(2*time.Second),
 	); err != nil {
 		return fmt.Errorf("wait detail page: %w", err)
 	}
 
 	var detail map[string]interface{}
-	if err := chromedp.Run(detailCtx, chromedp.Evaluate(`
-		(() => {
-			const title = document.querySelector('h1').textContent;
-			const el = document.querySelector('span.u1opajno, span.u174bpcy');
-			const price = parseFloat(el.textContent.replace(/[^0-9.]/g, ''));
-			const location = document.querySelector('h2').textContent;
-			const rating = parseFloat(document.querySelector('div[data-testid="pdp-reviews-highlight-banner-host-rating"] div[aria-hidden ="true"], .r1lcxetl.atm_c8_o7aogt.atm_c8_l52nlx__oggzyc').textContent.trim());
-			const description = document.querySelector('span .l1h825yc.atm_kd_adww2_24z95b').textContent;
-			return { title, price, location, rating, description };
-		})();
-	`, &detail)); err != nil {
-		return fmt.Errorf("extract detail page fields: %w", err)
-	}
+    if err := chromedp.Run(detailCtx, chromedp.Evaluate(`
+        (() => {
+            const titleEl = document.querySelector('h1');
+            const title = titleEl ? titleEl.textContent : '';
 
-	_ = chromedp.Run(detailCtx, chromedp.Location(&l.URL))
-	l.Title = strings.TrimSpace(detail["title"].(string))
-    l.Price = float32(detail["price"].(float64))
-    l.Location = strings.TrimSpace(detail["location"].(string))
-    l.Rating = float32(detail["rating"].(float64))
-    l.Description = strings.TrimSpace(detail["description"].(string))
+            const priceEl = document.querySelector('span.u1opajno, span.u174bpcy');
+            const price = priceEl ? parseFloat(priceEl.textContent.replace(/[^0-9.]/g, '')) : 0;
+
+            const locationEl = document.querySelector('h2');
+            const location = locationEl ? locationEl.textContent : '';
+
+            const ratingEl = document.querySelector('div[data-testid="pdp-reviews-highlight-banner-host-rating"] div[aria-hidden="true"], .r1lcxetl.atm_c8_o7aogt.atm_c8_l52nlx__oggzyc');
+            const rating = ratingEl ? parseFloat(ratingEl.textContent.trim()) : 0;
+
+            const descEl = document.querySelector('span .l1h825yc.atm_kd_adww2_24z95b');
+            const description = descEl ? descEl.textContent : '';
+
+            return { title, price, location, rating, description };
+        })();
+    `, &detail)); err != nil {
+        return fmt.Errorf("extract detail page fields: %w", err)
+    }
+
+    _ = chromedp.Run(detailCtx, chromedp.Location(&l.URL))
+
+    if v, ok := detail["title"].(string); ok {
+        l.Title = strings.TrimSpace(v)
+    }
+    if v, ok := detail["price"].(float64); ok {
+        l.Price = float32(v)
+    }
+    if v, ok := detail["location"].(string); ok {
+        l.Location = strings.TrimSpace(v)
+    }
+    if v, ok := detail["rating"].(float64); ok {
+        l.Rating = float32(v)
+    }
+    if v, ok := detail["description"].(string); ok {
+        l.Description = strings.TrimSpace(v)
+    }
 
 	if err := chromedp.Run(detailCtx,
 		chromedp.Navigate(searchURL),
