@@ -92,6 +92,41 @@ The scraper will process the configured cities (default: New York, Paris, Bangko
 docker exec -it airbnb-scraper-postgres psql -U airbnb -d airbnb_scraper -c "SELECT * FROM listings;"
 ```
 
+---
+## Insight Report
+
+```
+═══════════════════════════════════════════════════
+DONE — 30 total listings → all_listings.json
+DB   — 30 listings upserted → listings table
+  New York:      6 listings
+  Paris:         6 listings
+  Bangkok:       6 listings
+  Tokyo:         6 listings
+  Sydney:        6 listings
+STATS
+  Total Listings Scraped : 30
+  Average Price          : 335.97
+  Minimum Price          : 172.00
+  Maximum Price          : 524.00
+  Most Expensive Property: RESORT STYLE BY THE BAY | $524.00
+  Listings per City
+    - Bangkok: 6
+    - New York: 6
+    - Paris: 6
+    - Sydney: 6
+    - Tokyo: 6
+  Top 5 Highest Rated Properties
+    1) 5.00★ | Parisian nest in the heart of the 11th arrondissement of Paris
+    2) 5.00★ | Pigcat Room near Em District & BTS Prom Phong
+    3) 5.00★ | Light-Filled Queen Room with shared bathroom
+    4) 5.00★ | Cozy room near BTS- Iconsiam B505
+    5) 4.98★ | Home away from Home Apartment in Thonglor
+ ══════════════════════════════════════════════════
+ ```
+
+ ---
+
 ## Project Structure
 
 ```
@@ -127,4 +162,3 @@ airbnb-scraper-w3e/
     └── postgres-init/
         └── 001_create_listings.sql  # Auto-run SQL: creates listings table and indexes
 ```
-

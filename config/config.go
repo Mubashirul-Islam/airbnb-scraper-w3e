@@ -1,8 +1,6 @@
 package config
 
 import (
-	"os"
-	"strconv"
 	"time"
 )
 
@@ -41,43 +39,23 @@ func Default() Config {
 			"Tokyo",
 			"Sydney",
 		},
-		Workers:              getEnvInt("WORKERS", 3),
+		Workers:              5,
 		MaxPages:             2,
 		MaxPropertiesPerPage: 3,
 		OutFile:              "all_listings.json",
-		Headless:             false,
-		UserAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) " +
-			"AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+		Headless:             "new",
+		UserAgent:            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
 
-		DetailDelay:   1500 * time.Millisecond,
-		PageDelay:     2 * time.Second,
+		DetailDelay:   4 * time.Second,
+		PageDelay:     4 * time.Second,
 		DetailTimeout: 35 * time.Second,
 		GlobalTimeout: 90 * time.Minute,
 
-		DBHost:     getEnv("DB_HOST", "localhost"),
-		DBPort:     getEnvInt("DB_PORT", 5433),
-		DBUser:     getEnv("DB_USER", "airbnb"),
-		DBPassword: getEnv("DB_PASSWORD", "airbnb"),
-		DBName:     getEnv("DB_NAME", "airbnb_scraper"),
-		DBSSLMode:  getEnv("DB_SSLMODE", "disable"),
+		DBHost:     "localhost",
+		DBPort:     5433,
+		DBUser:     "airbnb",
+		DBPassword: "airbnb",
+		DBName:     "airbnb_scraper",
+		DBSSLMode:  "disable",
 	}
-}
-
-func getEnv(key string, fallback string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
-	}
-	return fallback
-}
-
-func getEnvInt(key string, fallback int) int {
-	v := os.Getenv(key)
-	if v == "" {
-		return fallback
-	}
-	parsed, err := strconv.Atoi(v)
-	if err != nil {
-		return fallback
-	}
-	return parsed
 }
