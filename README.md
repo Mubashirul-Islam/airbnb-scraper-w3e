@@ -73,12 +73,6 @@ All settings have sensible defaults and can be overridden with environment varia
 | `DB_SSLMODE`  | `disable`        | PostgreSQL SSL mode                  |
 | `WORKERS`     | `3`              | Number of cities scraped in parallel |
 
-Export them directly or place them in a `.env` file and source it:
-
-```bash
-export WORKERS=5
-export DB_HOST=mydbhost
-```
 
 ---
 
