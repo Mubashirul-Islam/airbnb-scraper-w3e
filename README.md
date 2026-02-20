@@ -86,6 +86,12 @@ The scraper will process the configured cities (default: New York, Paris, Bangko
 
 ---
 
+## Check stored data
+
+```bash
+docker exec -it airbnb-scraper-postgres psql -U airbnb -d airbnb_scraper -c "SELECT * FROM listings;"
+```
+
 ## Project Structure
 
 ```
