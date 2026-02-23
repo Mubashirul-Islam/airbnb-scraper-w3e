@@ -31,6 +31,23 @@ cd airbnb-scraper-w3e
 
 ---
 
+## Quick Start
+
+After cloning, you can run the project with a single command:
+
+```bash
+chmod +x run.sh
+./run.sh
+```
+
+This script runs the following steps sequentially:
+
+1. `go mod download` — installs Go dependencies
+2. `docker compose up -d postgres` — starts the PostgreSQL container
+3. `go run .` — runs the scraper
+
+---
+
 ## Setup
 
 ### 1. Install Go dependencies
@@ -73,7 +90,6 @@ All settings have sensible defaults and can be overridden with environment varia
 | `DB_SSLMODE`  | `disable`        | PostgreSQL SSL mode                  |
 | `WORKERS`     | `3`              | Number of cities scraped in parallel |
 
-
 ---
 
 ## Running the Scraper
@@ -93,6 +109,7 @@ docker exec -it airbnb-scraper-postgres psql -U airbnb -d airbnb_scraper -c "SEL
 ```
 
 ---
+
 ## Insight Report
 
 ```
@@ -123,9 +140,9 @@ STATS
     4) 5.00★ | Cozy room near BTS- Iconsiam B505
     5) 4.98★ | Home away from Home Apartment in Thonglor
  ══════════════════════════════════════════════════
- ```
+```
 
- ---
+---
 
 ## Project Structure
 

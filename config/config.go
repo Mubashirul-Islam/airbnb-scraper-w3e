@@ -46,10 +46,10 @@ func Default() Config {
 		Headless:             "new",
 		UserAgent:            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
 
-		DetailDelay:   4 * time.Second,
-		PageDelay:     4 * time.Second,
-		DetailTimeout: 35 * time.Second,
-		GlobalTimeout: 90 * time.Minute,
+		DetailDelay:   10 * time.Second,
+		PageDelay:     10 * time.Second,
+		DetailTimeout: 1 * time.Minute,
+		GlobalTimeout: 15 * time.Minute,
 
 		DBHost:     "localhost",
 		DBPort:     5433,
