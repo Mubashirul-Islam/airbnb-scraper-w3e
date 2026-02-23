@@ -1,6 +1,7 @@
 package config
 
 import (
+	"math/rand"
 	"time"
 )
 
@@ -15,8 +16,6 @@ type Config struct {
 	UserAgent            string
 
 	// Timing
-	DetailDelay   time.Duration
-	PageDelay     time.Duration
 	DetailTimeout time.Duration
 	GlobalTimeout time.Duration
 
@@ -46,10 +45,8 @@ func Default() Config {
 		Headless:             "new",
 		UserAgent:            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
 
-		DetailDelay:   10 * time.Second,
-		PageDelay:     10 * time.Second,
-		DetailTimeout: 1 * time.Minute,
-		GlobalTimeout: 15 * time.Minute,
+		DetailTimeout: 30 * time.Second,
+		GlobalTimeout: 10 * time.Minute,
 
 		DBHost:     "localhost",
 		DBPort:     5433,
@@ -58,4 +55,9 @@ func Default() Config {
 		DBName:     "airbnb_scraper",
 		DBSSLMode:  "disable",
 	}
+}
+
+// RandomDelay returns a random duration between 3 and 9 seconds.
+func RandomDelay() time.Duration {
+	return time.Duration(3+rand.Intn(7)) * time.Second
 }

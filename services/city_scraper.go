@@ -21,7 +21,7 @@ func ScrapeCity(tabCtx context.Context, city string, cfg config.Config) ([]model
 	for page := 1; page <= cfg.MaxPages; page++ {
 		log.Printf("[%s] search page %d/%d", city, page, cfg.MaxPages)
 
-		stubs, err := scraper.SearchPage(tabCtx, city, page, cfg.PageDelay, cfg.MaxPropertiesPerPage)
+		stubs, err := scraper.SearchPage(tabCtx, city, page, config.RandomDelay(), cfg.MaxPropertiesPerPage)
 		if err != nil {
 			log.Printf("[%s] ⚠ page %d: %v", city, page, err)
 			continue
@@ -33,14 +33,14 @@ func ScrapeCity(tabCtx context.Context, city string, cfg config.Config) ([]model
 
 			if err := scraper.FillDetailPage(tabCtx, &stubs[i], i, cfg); err != nil {
 				log.Printf("[%s] ⚠ detail error: %v", city, err)
-				time.Sleep(cfg.DetailDelay)
+				time.Sleep(config.RandomDelay())
 				continue
 			}
 
 			if strings.TrimSpace(stubs[i].URL) != "" || strings.TrimSpace(stubs[i].Title) != "" {
 				pageListings = append(pageListings, stubs[i])
 			}
-			time.Sleep(cfg.DetailDelay)
+			time.Sleep(config.RandomDelay())
 		}
 
 		all = append(all, pageListings...)
@@ -48,7 +48,7 @@ func ScrapeCity(tabCtx context.Context, city string, cfg config.Config) ([]model
 			city, page, len(pageListings), len(all))
 
 		if page < cfg.MaxPages {
-			time.Sleep(cfg.PageDelay)
+			time.Sleep(config.RandomDelay())
 		}
 	}
 
